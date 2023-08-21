@@ -4,7 +4,7 @@
 # Description:  Greet user and collect input for Temperature, Altitude, and RPM
 #               Return values to calling module
 
-def get_user_data():
+def getData():
 
     # declare variables & initialize
     airplane = "Cessna 172S"            # manually entered airplane type, to be converted to input later
@@ -64,7 +64,7 @@ def get_user_data():
 
 
 def main():
-    values = get_user_data()
+    values = getData()
     print(values[0], values[1], values[2])
     return
 
