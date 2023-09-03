@@ -1,5 +1,6 @@
 # Author:       Charles D. Maddux
 # Revision:     0.0.1
+# Date Created: 20 Aug 2023
 # Date Revised: 20 Aug 2023
 # Description:  given file names, retrieve performance data from libraries and populate a given data structure
 #               return results
@@ -32,7 +33,7 @@ def main():
     belowSTP = readCSV("C172S_STP_low.csv", belowSTP)
     print("chickens")
     for pressure_alt in belowSTP:
-        # print(belowSTP[pressure_alt]['alt'])
+        print(belowSTP[pressure_alt]['alt'])
         for rpm in belowSTP[pressure_alt]:
             print (belowSTP[pressure_alt][rpm])
 

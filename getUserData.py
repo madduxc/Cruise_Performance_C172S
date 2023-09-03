@@ -1,5 +1,6 @@
 # Author:       Charles D. Maddux
 # Revision:     0.0.1
+# Date Created: 19 Aug 2023
 # Date Revised: 19 Aug 2023
 # Description:  Greet user and collect input for Temperature, Altitude, and RPM
 #               Return values to calling module
