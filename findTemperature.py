@@ -1,11 +1,12 @@
 # Author:       Charles D. Maddux
 # Revision:     0.0.1
 # Date Created: 26 Aug 2023
-# Date Revised: 26 Aug 2023
+# Date Revised: 3 Sep 2023
 # Description:  given a list of temperatures representing each performance table, find two performance tables that
 #               satisfy the requirement, Table1 </= Temp </= Table2, where unless the temperature given is equal to
 #               the lowest allowed temperature (Table1 == Temp), then Table1 < Temp </= Table2.
 
+from Response import getResponse
 
 def findTempTable(user_temp, temp_list):
     """
@@ -34,24 +35,14 @@ def findTempTable(user_temp, temp_list):
                 response = 0
                 print("WARNING! The temperature you have entered is outside of the range published in the Cruise Performance tables.")
                 print("This program cannot return the actual performance values at the temperature entered by the user.")
-                while response == 0:
-                    cutoff = input("Would you like to use cutoff values?  Enter 'yes' or 'no'")
-                    if cutoff.lower() == 'yes' or cutoff.lower() == 'y':
-                        file_1 = 0
-                        file_2 = 1
-                        factor = 0
-                        return file_1, file_2, factor
-                    elif cutoff.lower() == 'no' or cutoff.lower() == 'n':
-                        print("process has ended.  Returning to main function.")
-                        return file_1, file_2, factor
-                    else:
-                        print("This response is not understood. Please try again.")
-            # handle exact match. Return temp 1 = user_temp, temp_2 = -999,
-            elif user_temp == temp_list[0]:
-                file_1 = 0
-                file_2 = 1
-                factor = 0
-                return file_1, file_2, factor
+                response = getResponse()
+                if response == True:
+                    user_temp = temp_list[0]
+                elif response == False:
+                    return file_1, file_2, factor
+                else:
+                    print("An unspecified error has occurred. Returning to main menu")
+                    return file_1, file_2, factor
             else:
                 continue
         else:
@@ -69,26 +60,27 @@ def findTempTable(user_temp, temp_list):
             else:
                 # handle the case of temp greater than upper bound
                 if val == len(temp_list) - 1:
-                    response = 0
                     print("WARNING! The temperature you have entered is outside of the range published in the Cruise Performance tables.")
                     print("This program cannot return the actual performance values at the temperature entered by the user.")
-                    while response == 0:
-                        cutoff = input("Would you like to use cutoff values?  Enter 'yes' or 'no'")
-                        if cutoff.lower() == 'yes' or cutoff.lower() == 'y':
-                            file_1 = val - 1
-                            file_2 = val
-                            factor = 1
+                    response = getResponse()
+                    if response == True:
+                        file_1 = val - 1
+                        file_2 = val
+                        factor = 1
+                        return file_1, file_2, factor
+                    elif response == False:
                             return file_1, file_2, factor
-                        elif cutoff.lower() == 'no' or cutoff.lower() == 'n':
-                            print("process has ended.  Returning to main function.")
-                            return file_1, file_2, factor
-                        else:
-                            print("This response is not understood. Please try again.")
+                    else:
+                        print("An unspecified error has occurred. Returning to main menu")
+                        return file_1, file_2, factor
     return file_1, file_2, factor
 
 
 def main():
-    print("chickens")
+    temps = [-5, 15, 35]
+    user_temp = 36
+    index_1, index_2, temp_factor = findTempTable(user_temp, temps)
+    print(index_1, index_2, temp_factor)
     return
 
 

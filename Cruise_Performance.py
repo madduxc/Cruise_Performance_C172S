@@ -1,7 +1,7 @@
 # Author:       Charles D. Maddux
 # Revision:     0.0.1
 # Date Created: 19 Aug 2023
-# Date Revised: 2 Sep 2023
+# Date Revised: 3 Sep 2023
 # Description:  Control the Cruise_Performance app and call modules as necessary to
 #               get data,
 #               perform calculations,
@@ -13,56 +13,10 @@ from getUserData import getData
 from tempAtMSL import tempAtMSL
 from findTemperature import findTempTable
 from findAltitude import findAltitudeTable
+from findRPM import findRPMData
 
 # global variables
 STP = 15
-
-# data structure:                temp 1                                     temp2
-#                       alt1                alt2                    alt1                alt2
-#                   rpm1    rpm2        rpm1    rpm2            rpm1    rpm2        rpm1    rpm2
-#                   TAS     TAS         TAS     TAS             TAS     TAS         TAS     TAS
-#                   %pwr    %pwr        %pwr    %pwr            %pwr    %pwr        %pwr    %pwr
-#                   GPH     GPH         GPH     GPH             GPH     GPH         GPH     GPH
-#       temp_index_1
-#       temp_index_2
-#       temp1_alt1
-#       temp1_alt2
-#       temp2_alt1
-#       temp2_alt2
-#       temp1_alt1_rpm1
-#       temp1_alt1_rpm2
-#       temp1_alt2_rpm1
-#       temp1_alt2_rpm2
-#       temp2_alt1_rpm1
-#       temp2_alt1_rpm2
-#       temp2_alt2_rpm1
-#       temp2_alt2_rpm2
-#       TAS_temp1_alt1_rpm1
-#       TAS_temp1_alt1_rpm2
-#       TAS_temp1_alt2_rpm1
-#       TAS_temp1_alt2_rpm2
-#       TAS_temp2_alt1_rpm1
-#       TAS_temp2_alt1_rpm2
-#       TAS_temp2_alt2_rpm1
-#       TAS_temp2_alt2_rpm2
-#       pwr_temp1_alt1_rpm1
-#       pwr_temp1_alt1_rpm2
-#       pwr_temp1_alt2_rpm1
-#       pwr_temp1_alt2_rpm2
-#       pwr_temp2_alt1_rpm1
-#       pwr_temp2_alt1_rpm2
-#       pwr_temp2_alt2_rpm1
-#       pwr_temp2_alt2_rpm2
-#       fuel_temp1_alt1_rpm1
-#       fuel_temp1_alt1_rpm2
-#       fuel_temp1_alt2_rpm1
-#       fuel_temp1_alt2_rpm2
-#       fuel_temp2_alt1_rpm1
-#       fuel_temp2_alt1_rpm2
-#       fuel_temp2_alt2_rpm1
-#       fuel_temp2_alt2_rpm2
-
-
 
 
 def main():
@@ -84,8 +38,11 @@ def main():
     filename_low  = "C172S_STP_low.csv"
     filename_stp  = "C172S_STP.csv"
     filename_high = "C172S_STP_high.csv"
-    files = [filename_low, filename_stp, filename_high]
+
+    # temperatures and return date - hard coded
     temps = [STP - 20, STP, STP + 20]
+    return_vals = ['pctPwr', 'TAS', 'gph']
+    final_vals = list()
 
     # create dictionaries for libraries
     belowSTP = dict()
@@ -97,8 +54,6 @@ def main():
     atSTP    = readCSV(filename_stp, atSTP)
     aboveSTP = readCSV(filename_high, aboveSTP)
     tables = [belowSTP, atSTP, aboveSTP]
-
-    print(belowSTP)
 
     # get user altitude, temperature at altitude, and RPM setting
     user_inputs = getData()
@@ -112,20 +67,46 @@ def main():
 
     # find the temperature tables from which to interpolate data and the factor between them
     temp_index_1, temp_index_2, temp_factor = findTempTable(temp_at_SL, temps)
-    print(temp_index_1, temp_index_2, temp_factor)
 
     # find the relevant altitudes at each temperature
     temp1_alt1, temp1_alt2, temp1_alt_factor = findAltitudeTable(user_inputs[1], tables[temp_index_1])
     temp2_alt1, temp2_alt2, temp2_alt_factor = findAltitudeTable(user_inputs[1], tables[temp_index_2])
-    print(temp1_alt1, temp1_alt2, temp1_alt_factor)
-    print(temp2_alt1, temp2_alt2, temp2_alt_factor)
 
+    temp1_alt1_rpm1,temp1_alt1_rpm2, temp1_alt1_factor = findRPMData(user_inputs[2], tables[temp_index_1][str(temp1_alt1)])
+    temp1_alt2_rpm1,temp1_alt2_rpm2, temp1_alt2_factor = findRPMData(user_inputs[2], tables[temp_index_1][str(temp1_alt2)])
+    temp2_alt1_rpm1,temp2_alt1_rpm2, temp2_alt1_factor = findRPMData(user_inputs[2], tables[temp_index_2][str(temp2_alt1)])
+    temp2_alt2_rpm1,temp2_alt2_rpm2, temp2_alt2_factor = findRPMData(user_inputs[2], tables[temp_index_2][str(temp2_alt2)])
+
+    for val in return_vals:
+        temp1_alt1_val = tables[temp_index_1][str(temp1_alt1)]['RPM'][temp1_alt1_rpm1][val] \
+                         + temp1_alt1_factor \
+                         * (tables[temp_index_1][str(temp1_alt1)]['RPM'][temp1_alt1_rpm2][val] - \
+                            tables[temp_index_1][str(temp1_alt1)]['RPM'][temp1_alt1_rpm1][val] )
+        temp1_alt2_val = tables[temp_index_1][str(temp1_alt2)]['RPM'][temp1_alt2_rpm1][val] \
+                        + temp1_alt2_factor \
+                        * (tables[temp_index_1][str(temp1_alt2)]['RPM'][temp1_alt2_rpm2][val]
+                        - tables[temp_index_1][str(temp1_alt2)]['RPM'][temp1_alt2_rpm1][val])
+        temp1_val = temp1_alt1_val + temp1_alt_factor * (temp1_alt2_val - temp1_alt1_val)
+        temp2_alt1_val = tables[temp_index_2][str(temp2_alt1)]['RPM'][temp2_alt1_rpm1][val] \
+                         + temp2_alt1_factor \
+                         * (tables[temp_index_2][str(temp2_alt1)]['RPM'][temp2_alt1_rpm2][val]
+                            - tables[temp_index_2][str(temp2_alt1)]['RPM'][temp2_alt1_rpm1][val])
+        temp2_alt2_val = tables[temp_index_2][str(temp2_alt2)]['RPM'][temp2_alt2_rpm1][val] \
+                         + temp2_alt2_factor \
+                         * (tables[temp_index_2][str(temp2_alt2)]['RPM'][temp2_alt2_rpm2][val]
+                            - tables[temp_index_2][str(temp2_alt2)]['RPM'][temp2_alt2_rpm1][val])
+        temp2_val = temp2_alt1_val + temp2_alt_factor * (temp2_alt2_val - temp2_alt1_val)
+        value = temp1_val + temp_factor * (temp2_val - temp1_val)
+        final_vals.append(value)
+
+    print("At " + str(user_inputs[0]) + " degrees Celsius, " + str(user_inputs[1]) + " feet pressure altitude and " + str(user_inputs[2]) + " RPMs:")
+    print("   The power setting is " + str(final_vals[0]) + " %.")
+    print("   The true airspeed is " + str(final_vals[1]) + " knots.")
+    print("   The fuel flow is " + str(final_vals[2]) + " gallons per hour.")
     return
 
 
 def lookUpData(belowSTP, user_inputs):
-    # look up a specific data point specified by the user
-    # A: Find temperature or interpolate - return error if outside of bounds
     for data in belowSTP:
         # B: Find altitude or interpolate - return error if outside of bounds
         if str(user_inputs[1]) == data:
@@ -144,6 +125,13 @@ def lookUpData(belowSTP, user_inputs):
                 index += 1
     return
 
+
 if __name__ == "__main__":
     main()
 
+# data structure:                temp 1                                     temp2
+#                       alt1                alt2                    alt1                alt2
+#                   rpm1    rpm2        rpm1    rpm2            rpm1    rpm2        rpm1    rpm2
+#                   TAS     TAS         TAS     TAS             TAS     TAS         TAS     TAS
+#                   %pwr    %pwr        %pwr    %pwr            %pwr    %pwr        %pwr    %pwr
+#                   GPH     GPH         GPH     GPH             GPH     GPH         GPH     GPH
